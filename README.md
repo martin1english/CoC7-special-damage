@@ -1,8 +1,8 @@
 # CoC7 Special Damage
 
-A [FoundryVTT](https://foundryvtt.com/) module for the [Call of Cthulhu 7th Edition](https://github.com/Miskatonic-Investigative-Society/CoC7-FoundryVTT) system that enables weapons to deal damage to **characteristics**, **Magic Points**, or **Sanity** instead of Hit Points.
+A [FoundryVTT](https://foundryvtt.com/) module for the [Call of Cthulhu 7th Edition](https://github.com/Miskatonic-Investigative-Society/CoC7-FoundryVTT) system that enables Weapon Items to deal damage to **Characteristics (STATS), **Magic Points**, or **Sanity** **instead of **Hit Points.**
 
-Perfect for mythos artifacts, psychic attacks, cursed weapons, poison effects, or any scenario where damage targets something other than HP.
+Intended for those tricky follow-on damages that Mythos Creatures inflict. Byakhee Blood Drain, Migo Shrinking Ray, Disfiguring Eldritch Blast. This module lets you roll an attack or apply an automatic damage roll from normal combat card in the chat.
 
 ## Features
 
@@ -10,18 +10,17 @@ Perfect for mythos artifacts, psychic attacks, cursed weapons, poison effects, o
 - **Temporary or permanent drain** -- Characteristic damage can be temporary (via Active Effects that can be removed to restore the stat) or permanent (directly modifies the base value)
 - **Automatic attack mode** -- Skip the attack roll entirely and go straight to damage -- useful for traps, environmental hazards, or guaranteed-hit effects
 - **Armor bypass** -- Special damage ignores physical armor since it targets stats, not HP
-- **MP overflow** -- When MP damage exceeds current MP, the overflow is applied as HP damage per the rulebook
+- **MP overflow** -- When MP damage exceeds current MP, the overflow is applied as HP damage as per the rulebook
 - **SAN integration** -- SAN drain uses the system's built-in `setSan()` method, which automatically handles insanity triggers (temporary insanity at 5+ loss, indefinite insanity at daily limit)
-- **Zero-stat consequences** -- When any characteristic reaches 0, the actor is set to the "dead" condition with evocative flavor text describing their demise
-- **Chat card integration** -- Damage cards display "Drains: [STAT]" and "Automatic" badges, hide irrelevant armor controls, and show the correct un-armored damage values
+- **Zero-stat consequences** -- When any characteristic reaches 0, the actor is set to the "dead" condition with evocative flavor text describing their demise.
 - **Full compatibility** -- Works with melee weapons, ranged weapons, the character sheet, macros, and CoC7Links
 
 ## Requirements
 
-| Dependency | Version |
-|---|---|
-| FoundryVTT | v12 -- v13 |
-| CoC7 System | 7.13+ |
+| Dependency  | Version                    |
+| ----------- | -------------------------- |
+| FoundryVTT  | v12 -- v13                 |
+| CoC7 System | 7.13+                      |
 | lib-wrapper | Recommended (not required) |
 
 [lib-wrapper](https://foundryvtt.com/packages/lib-wrapper) provides clean method wrapping with conflict detection. The module falls back to manual monkey-patching if lib-wrapper is not installed, but lib-wrapper is strongly recommended for compatibility with other modules.
@@ -33,7 +32,7 @@ Perfect for mythos artifacts, psychic attacks, cursed weapons, poison effects, o
 1. In Foundry, go to **Add-on Modules** > **Install Module**
 2. Paste the following manifest URL:
    ```
-   https://github.com/<owner>/coc7-special-damage/releases/latest/download/module.json
+   https://github.com/martin1english/CoC7-special-damage/releases/latest/download/module.json
    ```
 3. Click **Install**
 
@@ -51,29 +50,24 @@ Perfect for mythos artifacts, psychic attacks, cursed weapons, poison effects, o
 2. Below the weapon properties, you'll see a new **Special Damage** section
 3. Check **Special Damage** to enable it
 4. Choose the **Target** stat from the dropdown (STR, CON, DEX, SIZ, APP, INT, POW, EDU, MP, or SAN)
-5. For characteristics (STR--EDU), choose whether the drain is **Permanent** or temporary:
-   - **Permanent** directly modifies the characteristic's base value
-   - **Temporary** (unchecked) creates an Active Effect -- removing the effect restores the stat
-   - MP and SAN always use direct reduction
-6. Optionally check **Automatic** to skip the attack roll entirely
+5. Damage For characteristics (STR--EDU):
+   - **(Unchecked) = Temporary** the default mode creates an Active Effect on the character sheet effects page -- removing this effect restores the stat.
+   - **(Checked ) = Permanent** directly modifies the characteristic's base value -- (Note this can only be reversed manually)
+6. Damage for MP and SAN 
+   - Special damage always inflicts Permanant reductions -- use the character sheet functions to restore.
+6. **Automatic** toggling this will skip the attack roll entirely. Damage will be rolled immediately.
 
 ### Making an Attack
 
-**Normal mode** (Automatic unchecked):
-- Attack as usual from the character sheet, a macro, or a CoC7Link
-- The initiator card and damage card work normally
-- When damage is dealt, it is redirected to the configured stat instead of HP
-- Armor is bypassed automatically
-
-**Automatic mode** (Automatic checked):
-1. Target one or more tokens on the canvas
-2. Click the weapon name on the character sheet (or trigger via macro)
-3. The attack roll is skipped entirely
-4. A damage card is created for each target with the damage automatically rolled and applied
+- Target one or more tokens on the canvas
+- Attack as usual from the weapon section of the character sheet.
+- Default weapons will roll to hit using the normal combat card rules and then substitute a special damage card.
+- Automatic weapons will skip directly to damage rolls.  
 
 ### Reading the Damage Card
 
 Damage cards for special damage weapons display:
+
 - A red **"Drains: [STAT]"** badge showing the target stat
 - A green **"Automatic"** badge if automatic mode is active
 - An **"Armor bypassed"** note
@@ -82,9 +76,11 @@ Damage cards for special damage weapons display:
 ### Chat Messages
 
 When special damage is applied, the module posts a summary to chat:
+
 > *Investigator loses 3 STR (9 remaining)*
 
 When a stat reaches 0, evocative flavor text describes the consequence:
+
 > *Investigator's body fails entirely, muscles wasted beyond function. It is as if they are dead.*
 
 ## Limitations
@@ -105,4 +101,4 @@ Additionally, a capturing-phase click listener on actor sheets intercepts weapon
 
 ## License
 
-This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.
+This project is licensed under the GNU General Public License v3.0. See [LICENSE](LICENSE) for details.
