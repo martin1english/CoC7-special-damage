@@ -1,0 +1,87 @@
+/* === Weapon Sheet: Special Damage Config === */
+.special-damage-config {
+  border-top: 1px dashed #999;
+  padding: 5px 0 2px;
+  margin-top: 5px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.special-damage-config label {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 12px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.special-damage-config input[type="checkbox"] {
+  margin: 0;
+  cursor: pointer;
+}
+
+.special-damage-config .sd-label {
+  font-weight: bold;
+  color: #8b0000;
+}
+
+.special-damage-config select {
+  height: 20px;
+  border: 1px solid #7a7971;
+  background: rgba(0, 0, 0, 0.05);
+  font-size: 12px;
+  padding: 0 2px;
+}
+
+.special-damage-config .sd-extra {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.special-damage-config .sd-perm-label {
+  color: #8b0000;
+  font-size: 11px;
+}
+
+.special-damage-config .sd-disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+/* === Damage Card: Info Block === */
+.coc7.chat-card.damage .sd-info-block {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  padding: 4px 6px;
+  margin: 4px 0;
+  background: rgba(139, 0, 0, 0.05);
+  border: 1px solid rgba(139, 0, 0, 0.2);
+  border-radius: 3px;
+}
+
+.coc7.chat-card.damage .drain-tag {
+  background: rgba(139, 0, 0, 0.1);
+  border-color: #8b0000;
+  color: #8b0000;
+  font-weight: bold;
+}
+
+.coc7.chat-card.damage .auto-tag {
+  background: rgba(0, 100, 0, 0.1);
+  border-color: #2d6e2d;
+  color: #2d6e2d;
+  font-weight: bold;
+}
+
+.coc7.chat-card.damage .sd-bypass-note {
+  font-size: 11px;
+  font-style: italic;
+  color: #8b0000;
+  opacity: 0.8;
+}

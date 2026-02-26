@@ -1,0 +1,38 @@
+<div class="special-damage-config" data-module="coc7-special-damage">
+  <label {{#if isShotgun}}title="{{localize 'CSD.ShotgunIncompatible'}}" style="opacity:0.5"{{/if}}>
+    <input type="checkbox"
+           class="sd-enabled-checkbox"
+           {{#if enabled}}checked{{/if}}
+           {{#if isShotgun}}disabled{{/if}} />
+    <span class="sd-label">{{localize 'CSD.SpecialDamage'}}</span>
+  </label>
+
+  {{#if enabled}}
+  {{#unless isShotgun}}
+  <div class="sd-extra">
+    <label>{{localize 'CSD.Target'}}:
+      <select class="sd-target-select">
+        {{#each targets}}
+          <option value="{{this.key}}" {{#if this.selected}}selected{{/if}}>{{this.label}}</option>
+        {{/each}}
+      </select>
+    </label>
+
+    <label class="sd-perm-label" {{#unless isCharacteristic}}style="opacity:0.5" title="{{localize 'CSD.AlwaysDirect'}}"{{/unless}}>
+      <input type="checkbox"
+             class="sd-permanent-checkbox"
+             {{#if permanent}}checked{{/if}}
+             {{#unless isCharacteristic}}checked disabled{{/unless}} />
+      {{localize 'CSD.Permanent'}}
+    </label>
+
+    <label>
+      <input type="checkbox"
+             class="sd-automatic-checkbox"
+             {{#if automatic}}checked{{/if}} />
+      {{localize 'CSD.Automatic'}}
+    </label>
+  </div>
+  {{/unless}}
+  {{/if}}
+</div>

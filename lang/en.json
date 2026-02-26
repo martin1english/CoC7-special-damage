@@ -1,0 +1,24 @@
+{
+  "CSD.SpecialDamage": "Special Damage",
+  "CSD.Target": "Target",
+  "CSD.Permanent": "Permanent",
+  "CSD.Automatic": "Automatic",
+  "CSD.Drains": "Drains: {stat}",
+  "CSD.DrainMessage": "{name} loses {amount} {stat} ({remaining} remaining)",
+  "CSD.MPOverflow": "{name} loses {mpDrained} MP. Remaining {overflow} drains HP ({hpRemaining} HP remaining)",
+  "CSD.SanZero": "{name} is permanently insane (SAN reduced to 0).",
+  "CSD.ActiveEffectLabel": "{stat} Drain (-{amount})",
+  "CSD.ShotgunIncompatible": "Special Damage is incompatible with Shotgun weapons",
+  "CSD.AlwaysDirect": "MP and SAN always use direct reduction",
+  "CSD.NoTarget": "No target selected. Select a target token before using Automatic attack.",
+  "CSD.ArmorBypassed": "Armor bypassed",
+
+  "CSD.ZeroStat.str": "{name}'s body fails entirely, muscles wasted beyond function. It is as if they are dead.",
+  "CSD.ZeroStat.con": "{name}'s constitution is completely destroyed. They are dead.",
+  "CSD.ZeroStat.dex": "{name}'s coordination collapses, their body locked and unresponsive. It is as if they are dead.",
+  "CSD.ZeroStat.siz": "{name} shrivels and diminishes into nothing. They are gone forever.",
+  "CSD.ZeroStat.app": "{name}'s form is so utterly ruined that life itself recoils. It is as if they are dead.",
+  "CSD.ZeroStat.int": "{name}'s mind is entirely gone, an empty shell. It is as if they are dead.",
+  "CSD.ZeroStat.pow": "{name}'s will and spirit are utterly extinguished. It is as if they are dead.",
+  "CSD.ZeroStat.edu": "{name} loses all knowledge and memory, reduced to a hollow blank. It is as if they are dead."
+}

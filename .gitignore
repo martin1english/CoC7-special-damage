@@ -1,0 +1,13 @@
+# Reference copy of the CoC7 system (not part of this module)
+_local/
+
+# OS files
+Thumbs.db
+.DS_Store
+
+# Editor files
+*.swp
+*.swo
+*~
+.vscode/
+.idea/

@@ -1,0 +1,46 @@
+{
+  "id": "coc7-special-damage",
+  "title": "CoC7 Special Damage",
+  "description": "Extends CoC7 weapons to deal damage to characteristics, Magic Points, or Sanity instead of Hit Points.",
+  "version": "0.1.0",
+  "compatibility": {
+    "minimum": 12,
+    "verified": 13
+  },
+  "authors": [
+    {
+      "name": "Martin"
+    }
+  ],
+  "esmodules": [
+    "scripts/main.mjs"
+  ],
+  "styles": [
+    "styles/special-damage.css"
+  ],
+  "languages": [
+    {
+      "lang": "en",
+      "name": "English",
+      "path": "lang/en.json"
+    }
+  ],
+  "relationships": {
+    "systems": [
+      {
+        "id": "CoC7",
+        "type": "system",
+        "compatibility": {
+          "minimum": "7.13"
+        }
+      }
+    ],
+    "recommends": [
+      {
+        "id": "lib-wrapper",
+        "type": "module",
+        "reason": "Clean method wrapping with conflict detection"
+      }
+    ]
+  }
+}
