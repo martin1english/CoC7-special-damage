@@ -2,33 +2,48 @@ import {
   MODULE_ID, CHARACTERISTICS, ALL_TARGETS, STAT_LABELS, DEFAULT_CONFIG
 } from './config.mjs';
 
+// The CoC7 system stores its chat-card data under this flag scope.
+const COC7_SCOPE = 'CoC7';
+
+/**
+ * Render a Handlebars template, preferring the v13 namespaced helper and
+ * falling back to the (deprecated) global for v12.
+ */
+function renderHbs (path, data) {
+  const fn = foundry.applications?.handlebars?.renderTemplate ?? renderTemplate;
+  return fn(path, data);
+}
+
 // ─────────────────────────────────────────────
 // Weapon Sheet: Special Damage Config Injection
-// Hook: renderItemSheet
+// Hooks: renderCoC7ModelsItemWeaponSheet (v8) / renderItemSheet (v12 fallback)
 // ─────────────────────────────────────────────
 
 /**
  * Inject the Special Damage configuration UI into weapon item sheets.
  * Only visible to GMs, only on weapon items.
  */
-export async function onRenderItemSheet (app, html, data) {
+export async function onRenderItemSheet (app, html) {
+  // ApplicationV2 sheets expose `document`; V1 sheets expose `item`.
+  const item = app.item ?? app.document;
+
   // Guard: only weapon items
-  if (app.item?.type !== 'weapon') return;
+  if (item?.type !== 'weapon') return;
 
   // Guard: GM only
   if (!game.user.isGM) return;
 
-  // Ensure html is jQuery
+  // Ensure html is jQuery (jQuery is still bundled in v13)
   const $html = html instanceof HTMLElement ? $(html) : html;
 
   // Guard: don't double-inject on re-render
   if ($html.find('.special-damage-config').length) return;
 
   // Read current config from item flags
-  const sdConfig = app.item.getFlag(MODULE_ID, 'config') ?? { ...DEFAULT_CONFIG };
+  const sdConfig = item.getFlag(MODULE_ID, 'config') ?? { ...DEFAULT_CONFIG };
 
   // Read shotgun state from weapon properties
-  const isShotgun = app.item.system?.properties?.shotgun === true;
+  const isShotgun = item.system?.properties?.shotgun === true;
 
   // Determine if current target is a characteristic
   const isCharacteristic = CHARACTERISTICS.includes(sdConfig.target);
@@ -49,13 +64,15 @@ export async function onRenderItemSheet (app, html, data) {
   };
 
   // Render the Handlebars template
-  const rendered = await renderTemplate(
+  const rendered = await renderHbs(
     `modules/${MODULE_ID}/templates/special-damage-config.hbs`,
     templateData
   );
 
-  // Find injection point: after the weapon properties div
-  const propertiesDiv = $html.find('.skill-attributes[data-set="properties"]');
+  // Find injection point: after the weapon properties div. CoC7 v8 (V2 sheet)
+  // renamed this container's class to .toggle-attributes, so match on the
+  // data-set attribute, which is stable across class-name changes.
+  const propertiesDiv = $html.find('[data-set="properties"]');
   if (!propertiesDiv.length) return;
 
   // Inject our config UI after the properties
@@ -66,8 +83,8 @@ export async function onRenderItemSheet (app, html, data) {
 
   configEl.find('.sd-enabled-checkbox').on('change', async (event) => {
     const newEnabled = event.target.checked;
-    const current = app.item.getFlag(MODULE_ID, 'config') ?? { ...DEFAULT_CONFIG };
-    await app.item.setFlag(MODULE_ID, 'config', {
+    const current = item.getFlag(MODULE_ID, 'config') ?? { ...DEFAULT_CONFIG };
+    await item.setFlag(MODULE_ID, 'config', {
       ...current,
       enabled: newEnabled
     });
@@ -75,9 +92,9 @@ export async function onRenderItemSheet (app, html, data) {
 
   configEl.find('.sd-target-select').on('change', async (event) => {
     const newTarget = event.target.value;
-    const current = app.item.getFlag(MODULE_ID, 'config') ?? { ...DEFAULT_CONFIG };
+    const current = item.getFlag(MODULE_ID, 'config') ?? { ...DEFAULT_CONFIG };
     const isMpSan = !CHARACTERISTICS.includes(newTarget);
-    await app.item.setFlag(MODULE_ID, 'config', {
+    await item.setFlag(MODULE_ID, 'config', {
       ...current,
       target: newTarget,
       // Force permanent for MP/SAN
@@ -87,8 +104,8 @@ export async function onRenderItemSheet (app, html, data) {
 
   configEl.find('.sd-permanent-checkbox').on('change', async (event) => {
     const newPermanent = event.target.checked;
-    const current = app.item.getFlag(MODULE_ID, 'config') ?? { ...DEFAULT_CONFIG };
-    await app.item.setFlag(MODULE_ID, 'config', {
+    const current = item.getFlag(MODULE_ID, 'config') ?? { ...DEFAULT_CONFIG };
+    await item.setFlag(MODULE_ID, 'config', {
       ...current,
       permanent: newPermanent
     });
@@ -96,8 +113,8 @@ export async function onRenderItemSheet (app, html, data) {
 
   configEl.find('.sd-automatic-checkbox').on('change', async (event) => {
     const newAutomatic = event.target.checked;
-    const current = app.item.getFlag(MODULE_ID, 'config') ?? { ...DEFAULT_CONFIG };
-    await app.item.setFlag(MODULE_ID, 'config', {
+    const current = item.getFlag(MODULE_ID, 'config') ?? { ...DEFAULT_CONFIG };
+    await item.setFlag(MODULE_ID, 'config', {
       ...current,
       automatic: newAutomatic
     });
@@ -105,204 +122,102 @@ export async function onRenderItemSheet (app, html, data) {
 }
 
 // ─────────────────────────────────────────────
-// Shared: Actor key resolution
+// Shared helpers
 // ─────────────────────────────────────────────
-
-/**
- * Resolve actor from key, handling "TOKEN.tokenId", "sceneId.tokenId",
- * and plain actorId formats.
- */
-function resolveActorFromKey (key) {
-  if (!key) return null;
-  // Synthetic token actor: "TOKEN.tokenId"
-  if (key.startsWith('TOKEN.')) {
-    const tokenId = key.slice(6);
-    return game.actors.tokens[tokenId] ?? null;
-  }
-  // Scene token: "sceneId.tokenId"
-  if (key.includes('.')) {
-    const [sceneId, tokenId] = key.split('.');
-    const scene = game.scenes.get(sceneId);
-    if (!scene) return null;
-    const tokenDoc = scene.tokens.get(tokenId);
-    return tokenDoc?.actor ?? null;
-  }
-  // Direct actor ID
-  return game.actors.get(key) ?? null;
-}
-
-/**
- * Resolve weapon Item from an actor key + item ID pair.
- */
-function resolveWeapon (actorKey, itemId) {
-  if (!actorKey || !itemId) return null;
-  const actor = resolveActorFromKey(actorKey);
-  return actor?.items?.get(itemId) ?? null;
-}
 
 /**
  * Read the special damage config from a weapon, returning null if not active.
  */
 function getActiveConfig (weapon) {
-  if (!weapon) return null;
+  if (!weapon?.getFlag) return null;
   const sdConfig = weapon.getFlag(MODULE_ID, 'config');
   if (!sdConfig?.enabled) return null;
   if (weapon.system?.properties?.shotgun) return null;
   return sdConfig;
 }
 
-// ─────────────────────────────────────────────
-// Initiator Card: Auto-Success for Automatic mode
-// Hook: renderChatMessage
-// ─────────────────────────────────────────────
-
 /**
- * When a combat initiator card (melee or range) is rendered for a weapon
- * with Automatic mode, set the auto-success flag so the attack auto-succeeds.
- * The card uses HTML data attributes (not dataset.object), so we update
- * the chat message content directly.
+ * Resolve the weapon Item referenced by a CoC7 chat-card message.
+ * v8 stores the weapon uuid in `message.flags.CoC7.load.itemUuid`.
  */
-export function autoSetInitiatorSuccess (message, html, data) {
-  // GM only — prevent multiple clients racing to update
-  if (!game.user.isGM) return;
-
-  const $html = html instanceof HTMLElement ? $(html) : html;
-
-  // Find melee or range initiator cards
-  let cardElement = $html.find('.coc7.chat-card.initiator');
-  if (!cardElement.length) cardElement = $html.filter('.coc7.chat-card.initiator');
-  if (!cardElement.length) return;
-
-  const chatCard = cardElement[0];
-
-  // Already set? Skip to prevent infinite loop
-  if (chatCard.dataset.autoSuccess === 'true') return;
-
-  // Resolve weapon from the card's data attributes
-  const actorKey = chatCard.dataset.actorKey;
-  const itemId = chatCard.dataset.itemId;
-  const weapon = resolveWeapon(actorKey, itemId);
-  const sdConfig = getActiveConfig(weapon);
-  if (!sdConfig?.automatic) return;
-
-  console.log(`${MODULE_ID} | Auto-setting autoSuccess on initiator card`);
-
-  // Update the message content to set auto-success
-  const content = message.content;
-  const newContent = content.replace(
-    /data-auto-success="false"/,
-    'data-auto-success="true"'
-  );
-
-  if (newContent !== content) {
-    message.update({ content: newContent });
+function weaponFromMessage (message) {
+  const itemUuid = message?.flags?.[COC7_SCOPE]?.load?.itemUuid;
+  if (!itemUuid) return null;
+  try {
+    return fromUuidSync(itemUuid);
+  } catch (e) {
+    return null;
   }
 }
 
 // ─────────────────────────────────────────────
 // Damage Card: Badge + Display Injection
-// Hook: renderChatMessage
+// Hook: renderChatMessageHTML
 // ─────────────────────────────────────────────
 
 /**
- * Inject badges, hide armor controls, fix damage display, and add
- * explanatory text on damage cards for weapons with special damage.
+ * Inject badges and hide armor controls on v8 damage cards for weapons with
+ * special damage. v8 damage cards are CoC7ChatDamage (melee) or
+ * CoC7ChatCombatRanged messages identified via `message.flags.CoC7.load`.
  */
-export function injectDamageCardBadge (message, html, data) {
-  const $html = html instanceof HTMLElement ? $(html) : html;
+export function injectDamageCardBadge (message, html) {
+  const element = html instanceof HTMLElement ? html : (html?.[0] ?? html);
+  if (!element?.querySelector) return;
 
-  let cardElement = $html.find('.coc7.chat-card.damage');
-  if (!cardElement.length) cardElement = $html.filter('.coc7.chat-card.damage');
-  if (!cardElement.length) return;
-
-  const chatCard = cardElement[0];
+  const load = message?.flags?.[COC7_SCOPE]?.load;
+  if (!load) return;
+  if (load.as !== 'CoC7ChatDamage' && load.as !== 'CoC7ChatCombatRanged') return;
 
   // Re-render guard
-  if (cardElement.find('.sd-info-block').length) return;
+  if (element.querySelector('.sd-info-block')) return;
 
-  let weapon = null;
-  let cardData = null;
-
-  // Try InteractiveChatCard path: data serialised in dataset.object
-  if (chatCard.dataset.object) {
-    try {
-      cardData = JSON.parse(unescape(chatCard.dataset.object));
-      const actorKey = cardData.actorKey;
-      const itemId = cardData.itemId;
-      if (actorKey && itemId) {
-        weapon = resolveWeapon(actorKey, itemId);
-      }
-    } catch (e) {
-      // Not a parseable card, skip
-    }
-  }
-
-  // Fallback: legacy card with data attributes directly on the card div
-  if (!weapon && chatCard.dataset.actorKey && chatCard.dataset.itemId) {
-    weapon = resolveWeapon(chatCard.dataset.actorKey, chatCard.dataset.itemId);
-  }
-
-  if (!weapon) return;
-
+  const weapon = weaponFromMessage(message);
   const sdConfig = getActiveConfig(weapon);
   if (!sdConfig) return;
 
-  const statLabel = STAT_LABELS[sdConfig.target];
+  const statLabel = STAT_LABELS[sdConfig.target] ?? sdConfig.target;
 
-  // ── Inject info block after header ──────────────────
-  const header = cardElement.find('.card-header');
-  const infoTarget = header.length ? header : cardElement.children().first();
+  // ── Build the info block ───────────────────────────
+  const infoBlock = document.createElement('div');
+  infoBlock.className = 'sd-info-block';
 
-  const drainText = game.i18n.format('CSD.Drains', { stat: statLabel });
-  const bypassText = game.i18n.localize('CSD.ArmorBypassed');
-  let infoHtml = `<div class="sd-info-block">`;
-  infoHtml += `<span class="tag drain-tag">${drainText}</span>`;
+  const drainTag = document.createElement('span');
+  drainTag.className = 'tag drain-tag';
+  drainTag.textContent = game.i18n.format('CSD.Drains', { stat: statLabel });
+  infoBlock.appendChild(drainTag);
+
   if (sdConfig.automatic) {
-    infoHtml += `<span class="tag auto-tag">${game.i18n.localize('CSD.Automatic')}</span>`;
-  }
-  infoHtml += `<span class="sd-bypass-note">${bypassText}</span>`;
-  infoHtml += `</div>`;
-  infoTarget.after(infoHtml);
-
-  // ── Hide armor controls ──────────────────────
-  // Hide pre-deal armor input/toggle
-  cardElement.find('.armor').hide();
-
-  // Hide post-deal armor tags (e.g. "Armor: 3") in the options area
-  const armorLocalized = game.i18n.localize('CoC7.Armor');
-  cardElement.find('.options .tag').filter(function () {
-    return $(this).text().includes(armorLocalized);
-  }).hide();
-  // Also hide "Armor Ignored" tags
-  const armorIgnoredLocalized = game.i18n.localize('CoC7.ArmorIgnored');
-  cardElement.find('.options .tag').filter(function () {
-    return $(this).text().includes(armorIgnoredLocalized);
-  }).hide();
-
-  // ── Fix damage display to show raw (un-armored) total ──
-  let rawDamage = null;
-  if (cardData) {
-    const formula = cardData.damageFormula;
-    if (formula !== undefined && formula !== null) {
-      rawDamage = !isNaN(Number(formula))
-        ? Number(formula)
-        : (cardData.roll?.total ?? null);
-    }
+    const autoTag = document.createElement('span');
+    autoTag.className = 'tag auto-tag';
+    autoTag.textContent = game.i18n.localize('CSD.Automatic');
+    infoBlock.appendChild(autoTag);
   }
 
-  if (rawDamage !== null) {
-    // Update "Inflict Pain (X)" button to show raw damage
-    const dealBtn = cardElement.find('button[data-action="dealDamage"]');
-    if (dealBtn.length) {
-      const painLabel = game.i18n.localize('CoC7.InflictPain');
-      dealBtn.text(`${painLabel} (${rawDamage})`);
-    }
+  const bypassNote = document.createElement('span');
+  bypassNote.className = 'sd-bypass-note';
+  bypassNote.textContent = game.i18n.localize('CSD.ArmorBypassed');
+  infoBlock.appendChild(bypassNote);
 
-    // Update "Damage Inflicted: X" result to show raw damage
-    const cardResult = cardElement.find('.card-result');
-    if (cardResult.length) {
-      const inflictedLabel = game.i18n.localize('CoC7.DamageInflicted');
-      cardResult.text(`${inflictedLabel} : ${rawDamage}`);
+  // ── Inject after the card header ───────────────────
+  const header = element.querySelector('.coc7-chat-header');
+  if (header) {
+    header.after(infoBlock);
+  } else {
+    (element.querySelector('.message-content') ?? element).prepend(infoBlock);
+  }
+
+  // ── Hide armor controls (special damage always bypasses armor) ──
+  const armorLabel = game.i18n.localize('CoC7.Armor');
+  element.querySelectorAll('label, span').forEach((el) => {
+    const text = el.textContent?.trim() ?? '';
+    if (text === `${armorLabel}:` || text.startsWith(`${armorLabel}:`)) {
+      const row = el.closest('.flexrow') ?? el.parentElement;
+      if (row) row.style.display = 'none';
     }
+  });
+  const ignoreToggle = element.querySelector('[data-action="toggleValue"][data-set="ignoreArmor"]');
+  if (ignoreToggle) {
+    const row = ignoreToggle.closest('.flexrow') ?? ignoreToggle.parentElement;
+    if (row) row.style.display = 'none';
   }
 }

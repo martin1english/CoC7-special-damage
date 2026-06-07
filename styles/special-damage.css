@@ -1,6 +1,30 @@
+/* === Theme-aware accent ===
+   Foundry v13 toggles `.theme-dark` / `.theme-light` on application windows.
+   The module's accent is a deep "blood" red that reads on light backgrounds but
+   becomes unreadable on dark; we lift it to a brighter red under the dark theme.
+   Variables are declared on both the sheet-config and chat-badge roots so the
+   overrides apply wherever the markup lives. */
+.special-damage-config,
+.sd-info-block {
+  --csd-accent: #8b0000;
+  --csd-accent-soft: rgba(139, 0, 0, 0.08);
+  --csd-accent-border: rgba(139, 0, 0, 0.30);
+  --csd-good: #2d6e2d;
+  --csd-good-soft: rgba(45, 110, 45, 0.10);
+}
+
+.theme-dark .special-damage-config,
+.theme-dark .sd-info-block {
+  --csd-accent: #ff7a7a;
+  --csd-accent-soft: rgba(255, 122, 122, 0.12);
+  --csd-accent-border: rgba(255, 122, 122, 0.45);
+  --csd-good: #7ed07e;
+  --csd-good-soft: rgba(126, 208, 126, 0.15);
+}
+
 /* === Weapon Sheet: Special Damage Config === */
 .special-damage-config {
-  border-top: 1px dashed #999;
+  border-top: 1px dashed var(--color-border-light-tertiary, #999);
   padding: 5px 0 2px;
   margin-top: 5px;
   display: flex;
@@ -16,6 +40,7 @@
   font-size: 12px;
   white-space: nowrap;
   cursor: pointer;
+  color: inherit;
 }
 
 .special-damage-config input[type="checkbox"] {
@@ -25,15 +50,25 @@
 
 .special-damage-config .sd-label {
   font-weight: bold;
-  color: #8b0000;
+  color: var(--csd-accent);
 }
 
+/* Let the select inherit Foundry's themed form-control colours instead of
+   forcing a near-transparent light background (which left dark text on dark in
+   dark mode). `color-scheme` makes the native dropdown popup follow the theme. */
 .special-damage-config select {
   height: 20px;
-  border: 1px solid #7a7971;
-  background: rgba(0, 0, 0, 0.05);
+  border: 1px solid var(--color-border-light-tertiary, #7a7971);
+  background: var(--color-cool-5, rgba(127, 127, 127, 0.10));
+  color: var(--color-text-primary, inherit);
+  color-scheme: light dark;
   font-size: 12px;
   padding: 0 2px;
+}
+
+.special-damage-config select option {
+  color: var(--color-text-primary, inherit);
+  background: var(--color-cool-5, Field);
 }
 
 .special-damage-config .sd-extra {
@@ -43,7 +78,7 @@
 }
 
 .special-damage-config .sd-perm-label {
-  color: #8b0000;
+  color: var(--csd-accent);
   font-size: 11px;
 }
 
@@ -52,36 +87,38 @@
   pointer-events: none;
 }
 
-/* === Damage Card: Info Block === */
-.coc7.chat-card.damage .sd-info-block {
+/* === Damage Card: Info Block ===
+   CoC7 v8 dropped the `.coc7.chat-card.damage` wrapper; the badges are now
+   injected into the new card markup, so target `.sd-info-block` directly. */
+.sd-info-block {
   display: flex;
   align-items: center;
   gap: 6px;
   flex-wrap: wrap;
   padding: 4px 6px;
   margin: 4px 0;
-  background: rgba(139, 0, 0, 0.05);
-  border: 1px solid rgba(139, 0, 0, 0.2);
+  background: var(--csd-accent-soft);
+  border: 1px solid var(--csd-accent-border);
   border-radius: 3px;
 }
 
-.coc7.chat-card.damage .drain-tag {
-  background: rgba(139, 0, 0, 0.1);
-  border-color: #8b0000;
-  color: #8b0000;
+.sd-info-block .drain-tag {
+  background: var(--csd-accent-soft);
+  border-color: var(--csd-accent);
+  color: var(--csd-accent);
   font-weight: bold;
 }
 
-.coc7.chat-card.damage .auto-tag {
-  background: rgba(0, 100, 0, 0.1);
-  border-color: #2d6e2d;
-  color: #2d6e2d;
+.sd-info-block .auto-tag {
+  background: var(--csd-good-soft);
+  border-color: var(--csd-good);
+  color: var(--csd-good);
   font-weight: bold;
 }
 
-.coc7.chat-card.damage .sd-bypass-note {
+.sd-info-block .sd-bypass-note {
   font-size: 11px;
   font-style: italic;
-  color: #8b0000;
-  opacity: 0.8;
+  color: var(--csd-accent);
+  opacity: 0.85;
 }

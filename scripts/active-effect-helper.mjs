@@ -26,6 +26,8 @@ export async function createDrainEffect (actor, targetKey, amount) {
 
   const aeData = {
     name: effectName,
+    // v11+ renamed ActiveEffect `icon` → `img`; keep `icon` too for v12 safety.
+    img: AE_ICON,
     icon: AE_ICON,
     changes: [{
       key: statPath,
